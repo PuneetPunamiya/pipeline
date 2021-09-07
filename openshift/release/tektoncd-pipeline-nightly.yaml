@@ -172,6 +172,12 @@ rules:
     resources: ["podsecuritypolicies"]
     resourceNames: ["tekton-pipelines"]
     verbs: ["use"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get"]
+    # The webhook configured the namespace as the OwnerRef on various cluster-scoped resources,
+    # which requires we can Get the system namespace.
+    resourceNames: ["tekton-pipelines"]
 
 ---
 # Copyright 2020 The Tekton Authors
@@ -1511,6 +1517,9 @@ data:
   # Setting this flag will determine which gated features are enabled.
   # Acceptable values are "stable" or "alpha".
   enable-api-fields: "stable"
+  # Setting this flag to "true" scopes when expressions to guard a Task only
+  # instead of a Task and its dependent Tasks.
+  scope-when-expressions-to-task: "false"
 
 ---
 # Copyright 2021 The Tekton Authors
@@ -1778,8 +1787,6 @@ spec:
       - name: tekton-pipelines-controller
         image: quay.io/openshift-pipeline/tektoncd-pipeline-controller:nightly
         args: [
-          # Version, to be replace at release time
-          "-version", "nightly",
           # These images are built on-demand by `ko resolve` and are replaced
           # by image references by digest.
           "-kubeconfig-writer-image", "quay.io/openshift-pipeline/tektoncd-pipeline-kubeconfigwriter:nightly",
@@ -1794,7 +1801,10 @@ spec:
           # The shell image must be root in order to create directories and copy files to PVCs.
           # gcr.io/distroless/base:debug as of Apirl 17, 2021
           # image shall not contains tag, so it will be supported on a runtime like cri-o
-          "-shell-image", "registry.access.redhat.com/ubi8/ubi-minimal:latest"
+          "-shell-image", "registry.access.redhat.com/ubi8/ubi-minimal:latest",
+          # for script mode to work with windows we need a powershell image
+          # pinning to nanoserver tag as of July 15 2021
+          "-shell-image-win", "mcr.microsoft.com/powershell:nanoserver@sha256:b6d5ff841b78bdf2dfed7550000fd4f3437385b8fa686ec0f010be24777654d6"
         ]
         volumeMounts:
         - name: config-logging
