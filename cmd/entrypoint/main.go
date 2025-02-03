@@ -30,15 +30,15 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/tektoncd/pipeline/cmd/entrypoint/subcommands"
-	featureFlags "github.com/tektoncd/pipeline/pkg/apis/config"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"github.com/tektoncd/pipeline/pkg/credentials"
-	"github.com/tektoncd/pipeline/pkg/credentials/dockercreds"
-	"github.com/tektoncd/pipeline/pkg/credentials/gitcreds"
+//	featureFlags "github.com/tektoncd/pipeline/pkg/apis/config"
+	//"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/types"
+//	"github.com/tektoncd/pipeline/pkg/credentials"
+//	"github.com/tektoncd/pipeline/pkg/credentials/dockercreds"
+//	"github.com/tektoncd/pipeline/pkg/credentials/gitcreds"
 	"github.com/tektoncd/pipeline/pkg/entrypoint"
-	"github.com/tektoncd/pipeline/pkg/spire"
-	"github.com/tektoncd/pipeline/pkg/spire/config"
+	//"github.com/tektoncd/pipeline/pkg/spire"
+	//"github.com/tektoncd/pipeline/pkg/spire/config"
 	"github.com/tektoncd/pipeline/pkg/termination"
 )
 
@@ -61,7 +61,7 @@ var (
 	stepMetadataDir        = flag.String("step_metadata_dir", "", "If specified, create directory to store the step metadata e.g. /tekton/steps/<step-name>/")
 	enableSpire            = flag.Bool("enable_spire", false, "If specified by configmap, this enables spire signing and verification")
 	socketPath             = flag.String("spire_socket_path", "unix:///spiffe-workload-api/spire-agent.sock", "Experimental: The SPIRE agent socket for SPIFFE workload API.")
-	resultExtractionMethod = flag.String("result_from", featureFlags.ResultExtractionMethodTerminationMessage, "The method using which to extract results from tasks. Default is using the termination message.")
+	resultExtractionMethod = flag.String("result_from", entrypoint.ResultExtractionMethodTerminationMessage, "The method using which to extract results from tasks. Default is using the termination message.")
 )
 
 const (
@@ -71,8 +71,8 @@ const (
 func main() {
 	// Add credential flags originally introduced with our legacy credentials helper
 	// image (creds-init).
-	gitcreds.AddFlags(flag.CommandLine)
-	dockercreds.AddFlags(flag.CommandLine)
+	//gitcreds.AddFlags(flag.CommandLine)
+	//dockercreds.AddFlags(flag.CommandLine)
 
 	// Split args with `--` for the entrypoint and what it should execute
 	args, commandArgs := extractArgs(os.Args[1:])
@@ -96,12 +96,14 @@ func main() {
 	// from secret volume mounts to /tekton/creds. This is done to support the expansion
 	// of a variable, $(credentials.path), that resolves to a single place with all the
 	// stored credentials.
+	/*
 	builders := []credentials.Builder{dockercreds.NewBuilder(), gitcreds.NewBuilder()}
 	for _, c := range builders {
-		if err := c.Write(pipeline.CredsDir); err != nil {
+		if err := c.Write(entrypoint.CredsDir); err != nil {
 			log.Printf("Error initializing credentials: %s", err)
 		}
 	}
+	*/
 
 	var cmd []string
 	if *ep != "" {
@@ -130,6 +132,7 @@ func main() {
 		}
 	}
 
+/*
 	var spireWorkloadAPI spire.EntrypointerAPIClient
 	if enableSpire != nil && *enableSpire && socketPath != nil && *socketPath != "" {
 		spireConfig := config.SpireConfig{
@@ -137,6 +140,7 @@ func main() {
 		}
 		spireWorkloadAPI = spire.NewEntrypointerAPIClient(&spireConfig)
 	}
+*/
 
 	e := entrypoint.Entrypointer{
 		Command:         append(cmd, commandArgs...),
@@ -158,15 +162,17 @@ func main() {
 		DebugBeforeStep:        *debugBeforeStep,
 		OnError:                *onError,
 		StepMetadataDir:        *stepMetadataDir,
-		SpireWorkloadAPI:       spireWorkloadAPI,
+	//	SpireWorkloadAPI:       spireWorkloadAPI,
 		ResultExtractionMethod: *resultExtractionMethod,
 	}
 
 	// Copy any creds injected by the controller into the $HOME directory of the current
 	// user so that they're discoverable by git / ssh.
+	/*
 	if err := credentials.CopyCredsToHome(credentials.CredsInitCredentials); err != nil {
 		log.Printf("non-fatal error copying credentials: %q", err)
 	}
+	*/
 
 	if err := e.Go(); err != nil {
 		switch t := err.(type) { //nolint:errorlint // checking for multiple types with errors.As is ugly.
