@@ -30,13 +30,11 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/tektoncd/pipeline/cmd/entrypoint/subcommands"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"github.com/tektoncd/pipeline/pkg/credentials"
-	"github.com/tektoncd/pipeline/pkg/credentials/dockercreds"
-	"github.com/tektoncd/pipeline/pkg/credentials/gitcreds"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/types"
+
+	// "github.com/tektoncd/pipeline/pkg/credentials"
 	"github.com/tektoncd/pipeline/pkg/entrypoint"
-	"github.com/tektoncd/pipeline/pkg/termination"
+	message "github.com/tektoncd/pipeline/pkg/termination/message"
 )
 
 var (
@@ -66,8 +64,8 @@ const (
 func main() {
 	// Add credential flags originally introduced with our legacy credentials helper
 	// image (creds-init).
-	gitcreds.AddFlags(flag.CommandLine)
-	dockercreds.AddFlags(flag.CommandLine)
+	// gitcreds.AddFlags(flag.CommandLine)
+	// dockercreds.AddFlags(flag.CommandLine)
 
 	// Split args with `--` for the entrypoint and what it should execute
 	args, commandArgs := extractArgs(os.Args[1:])
@@ -91,12 +89,12 @@ func main() {
 	// from secret volume mounts to /tekton/creds. This is done to support the expansion
 	// of a variable, $(credentials.path), that resolves to a single place with all the
 	// stored credentials.
-	builders := []credentials.Builder{dockercreds.NewBuilder(), gitcreds.NewBuilder()}
-	for _, c := range builders {
-		if err := c.Write(pipeline.CredsDir); err != nil {
-			log.Printf("Error initializing credentials: %s", err)
-		}
-	}
+	// builders := []credentials.Builder{dockercreds.NewBuilder(), gitcreds.NewBuilder()}
+	// for _, c := range builders {
+	// 	if err := c.Write(pipeline.CredsDir); err != nil {
+	// 		log.Printf("Error initializing credentials: %s", err)
+	// 	}
+	// }
 
 	var cmd []string
 	if *ep != "" {
@@ -153,9 +151,9 @@ func main() {
 
 	// Copy any creds injected by the controller into the $HOME directory of the current
 	// user so that they're discoverable by git / ssh.
-	if err := credentials.CopyCredsToHome(credentials.CredsInitCredentials); err != nil {
-		log.Printf("non-fatal error copying credentials: %q", err)
-	}
+	// if err := credentials.CopyCredsToHome(credentials.CredsInitCredentials); err != nil {
+	// 	log.Printf("non-fatal error copying credentials: %q", err)
+	// }
 
 	if err := e.Go(); err != nil {
 		switch t := err.(type) { //nolint:errorlint // checking for multiple types with errors.As is ugly.
@@ -165,7 +163,7 @@ func main() {
 		case entrypoint.SkipError:
 			log.Print("Skipping step because a previous step failed")
 			os.Exit(1)
-		case termination.MessageLengthError:
+		case message.MessageLengthError:
 			log.Print(err.Error())
 			os.Exit(1)
 		case entrypoint.ContextError:
