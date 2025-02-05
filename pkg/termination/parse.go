@@ -1,3 +1,4 @@
+//go:build !disable_tls
 /*
 Copyright 2019 The Tekton Authors
 
@@ -29,6 +30,7 @@ import (
 //
 // If more than one item has the same key, only the latest is returned. Items
 // are sorted by their key.
+
 func ParseMessage(logger *zap.SugaredLogger, msg string) ([]result.RunResult, error) {
 	if msg == "" {
 		return nil, nil
@@ -64,3 +66,4 @@ func ParseMessage(logger *zap.SugaredLogger, msg string) ([]result.RunResult, er
 
 	return r2, nil
 }
+
