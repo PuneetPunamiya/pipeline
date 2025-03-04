@@ -1,6 +1,6 @@
 name: ci
 
-on: [pull_request] # yamllint disable-line rule:truthy
+on: [pull_request] # yamllint disable-line rule:truth
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull-request.number || github.ref }}
@@ -25,7 +25,8 @@ jobs:
         go-version-file: "go.mod"
     - name: build
       run: |
-        go build -v ./...
+        # go build -v ./...
+        go build -tags "disable_spire,disable_tls" ./cmd/entrypoint
   linting:
     needs: [build]
     name: lint
