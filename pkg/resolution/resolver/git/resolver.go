@@ -31,6 +31,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	gitcfg "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/go-scm/scm/factory"
@@ -179,6 +180,10 @@ func ResolveAnonymousGit(ctx context.Context, params map[string]string) (framewo
 
 	cloneOpts := &git.CloneOptions{
 		URL: repo,
+		Auth: &http.BasicAuth{
+			Username: "token",
+			Password: params[TokenKeyParam],
+		},
 	}
 	filesystem := memfs.New()
 	repository, err := git.Clone(memory.NewStorage(), filesystem, cloneOpts)
